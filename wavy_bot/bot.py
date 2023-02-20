@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import os
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -8,10 +8,20 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='$', intents=intents)
 
+# helper function that removes all non-characters from a string 
+
+def remove_non_character(text: str) -> str:
+    cleaned_text = ''
+    for char in text:
+        if char.isalpha() or char == ' ':
+            cleaned_text += char
+    return cleaned_text
+
 
 @bot.event
 async def on_ready():
     print(f'{bot.user} is ready :)')
+
 
 
 
@@ -33,13 +43,10 @@ async def crt_textChl(ctx,*arg):
     categories_list = ctx.guild.categories 
     category_ = discord.utils.get(categories_list, name=category_name)
 
-    if category_:
-        channel_name = arg[0]
-        channel_ = await ctx.guild.create_text_channel(channel_name, category=category_)
-        await channel_.send(f'Bot created the {channel_.name}')
-    else:
-        await ctx.send("Category is not found :(")
-
+    channel_name = arg[0]
+    channel_ = await ctx.guild.create_text_channel(channel_name, category=category_)
+    await channel_.send(f'Bot created the {channel_.name}')
+    
 
 
 # deleting a channel
@@ -144,8 +151,17 @@ async def unmute(ctx,*members_):
         else:
             await ctx.send(f'member with the name {copy_member} is not found :[')
 
+# move people between voice channels
+# $move @member @member @member cahnnel
+# all members that are spcifyed are moved to named cahnnel 
+@bot.command()
+@commands.has_guild_permissions(move_members=True)
+async def move(ctx,*members_channel):
+    members = list(members_channel)
+    cahnnel = members.pop()
 
 
 
 
-bot.run(os.getenv('Token'))
+
+bot.run("Token")
