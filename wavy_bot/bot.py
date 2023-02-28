@@ -1,5 +1,8 @@
+from reddit_bot import reddit
+from Token import Token 
 import discord
 from discord.ext import commands
+
 
 
 intents = discord.Intents.default()
@@ -8,21 +11,11 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='$', intents=intents)
 
-# helper function that removes all non-characters from a string 
-
-def remove_non_character(text: str) -> str:
-    cleaned_text = ''
-    for char in text:
-        if char.isalpha() or char == ' ':
-            cleaned_text += char
-    return cleaned_text
 
 
 @bot.event
 async def on_ready():
     print(f'{bot.user} is ready :)')
-
-
 
 
 @bot.event
@@ -151,17 +144,56 @@ async def unmute(ctx,*members_):
         else:
             await ctx.send(f'member with the name {copy_member} is not found :[')
 
-# move people between voice channels
-# $move @member @member @member cahnnel
-# all members that are spcifyed are moved to named cahnnel 
 @bot.command()
-@commands.has_guild_permissions(move_members=True)
-async def move(ctx,*members_channel):
-    members = list(members_channel)
-    cahnnel = members.pop()
+async def search_reddit(ctx, *search_terms):
+    # Join the search terms into a string with spaces
+    search_query = " ".join(search_terms)
+
+    # Ask the user for the number of posts to return
+    await ctx.send("How many search results would you like to see? (1-10)")
+
+    def check(message):
+        return message.author == ctx.author and message.channel == ctx.channel
+
+    
+    msg = await bot.wait_for("message", timeout=10.0, check=check)
+    if not msg:
+        await ctx.send("You took too long to respond.")
+        return
+    try:
+        num_posts = int(msg.content)
+    except Exception as e:
+        await ctx.send(f"Invalid number of search results specified.")
+
+        return
+    if num_posts < 1 or num_posts > 10:
+        await ctx.send("Invalid number of search results specified. Please enter a number between 1 and 10.")
+        return
+
+    # Search for posts in all subreddits matching the search query
+    try:
+        results = reddit.subreddit("all").search(search_query, limit=num_posts)
+    except Exception as e:
+        await ctx.send(f"An error occurred while searching: {e}")
+        return
+    
+    # Display the titles and URLs of the search results
+    if results:
+        #save all the posts in a array
+        posts = []
+        for submission in results:
+            # Format the post title in bold and the URL in monospace font
+            post = f"\n**{submission.title}\n**\n{submission.url}\n"
+            posts.append(post)
+
+        for pst in posts:
+            # Send the formatted post title and URL to the channel
+            await ctx.send(pst)
+    else:
+        await ctx.send(f"No search results found for '{search_query}'")
 
 
 
 
 
-bot.run("Token")
+bot.run(Token)
