@@ -12,7 +12,35 @@ intents.members = True
 bot = commands.Bot(command_prefix='$', intents=intents)
 
 
+    
 
+@bot.event
+async def on_guild_join(guild):
+    # create a discord channel and display all the mapped voice_channels
+    mapping(guild.voice_channels)
+
+# helper function that maps all voice_channels to number
+mapped_vocie_channels = {}
+
+
+
+# the function simply maps voice_channels to number 
+def mapping(voice_channels:list):
+    for num in range(len(voice_channels)):
+        mapped_vocie_channels[num] = voice_channels[num]
+    return " Done "
+
+# the helper function simply changes the key of the voice_channel
+# to a string set by the user
+def set_voice_channel_key (key_:int,voice_channel_name:str):
+    if key_ in mapped_vocie_channels.keys():
+        voice_channel = mapped_vocie_channels[key_]
+        del mapped_vocie_channels[key_]
+        mapped_vocie_channels[voice_channel_name] = voice_channel
+        return True
+    else:
+        return False
+    
 @bot.event
 async def on_ready():
     print(f'{bot.user} is ready :)')
@@ -143,6 +171,59 @@ async def unmute(ctx,*members_):
             await ctx.send(f'{members_[i].name} is unmuted :) ')
         else:
             await ctx.send(f'member with the name {copy_member} is not found :[')
+
+# the command displays all the mapped voice_channels in guild
+# return a formated string 
+@bot.command()
+async def Display_Vc_name(ctx):
+    # a string variable to print put keys and values of voice_channels to the user to be set by the user
+    formated_voice_channel_name =""
+    for key,value in mapped_vocie_channels.items():
+        formated_voice_channel_name += f'\nchannel key: {key} ---> Channel name is: {value.name}.\n'
+    
+    formated_voice_channel_name += "\n You can change the Key of the voice channel use $Ckey channel_current_key channel_name. \n"
+    await ctx.send(formated_voice_channel_name)
+
+# the command takes the channel current key the name to be set 
+
+@bot.command()
+@commands.has_guild_permissions(manage_channels=True)
+async def Ckey(ctx,*massege):
+    
+    massege = list(massege)
+    channel_name = massege.pop()
+    channel_key = massege.pop()      
+
+    if set_voice_channel_key(int(channel_key),channel_name):
+        await ctx.send(" channel name has been changed ")
+    else:
+        await ctx.send(" key is not found... ")
+
+
+    
+
+# the command enables the user to move other user between channels 
+@bot.command()
+@commands.has_guild_permissions(move_members=True)
+async def move(ctx,*members):
+    members = list(members)
+    channel_key = members.pop()
+
+    # turn string of name members to object memebrs
+    for i in range(len(members)):
+        members[i] = discord.utils.get(ctx.guild.members,mention=members[i])
+    
+    # move members to spacifiyed channel 
+    for member in members:
+        if not member:
+            await ctx.send(f'{member} is regonized as a member in the server')
+        else:
+            await member.move_to(mapped_vocie_channels[int(channel_key)],reason=None)
+
+
+
+# retrives certine posts from reddit accodring to the user
+# search_reddit seach_terms
 
 @bot.command()
 async def search_reddit(ctx, *search_terms):
