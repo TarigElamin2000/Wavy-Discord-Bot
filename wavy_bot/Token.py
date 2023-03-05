@@ -1,0 +1,1 @@
+Token = "Your-discord-token"
